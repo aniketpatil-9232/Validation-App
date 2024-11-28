@@ -1,24 +1,23 @@
-# Start with a base Python image
-FROM python:3.11-slim
+FROM python:3.11
 
-# Install dependencies
+# Install ODBC driver and dependencies
 RUN apt-get update && apt-get install -y \
+    unixodbc-dev \
     curl \
-    apt-transport-https \
-    gnupg \
+    gnupg2 \
     && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update && ACCEPT_EULA=Y apt-get install -y msodbcsql17 unixodbc-dev \
-    && apt-get clean
+    && curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | tee /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql17
 
-# Set the working directory
+# Set working directory and install Python dependencies
 WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-# Copy the application files
-COPY . /app
+# Copy app code
+COPY . .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Run the application
+# Expose port if needed and run the app
+EXPOSE 8000
 CMD ["python", "app.py"]
